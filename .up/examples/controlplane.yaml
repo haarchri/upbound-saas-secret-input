@@ -1,0 +1,11 @@
+apiVersion: mcp.caas.upbound.io/v1alpha1
+kind: ControlPlane
+metadata:
+  name: haarchri-display-nothing
+  namespace: default
+spec:
+  parameters:
+    organizationName: upbound
+    configuration: haarchri-display-nothing
+  writeConnectionSecretToRef:
+    name: haarchri-display-nothing-kubeconfig

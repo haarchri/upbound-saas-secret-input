@@ -1,0 +1,10 @@
+apiVersion: haarchri.io/v1
+kind: Input
+metadata:
+  name: input-test
+spec:
+  mcpName: haarchri-display-nothing
+  clusterId: dev-cluster-a
+  eksVersion: "1.27"
+  writeConnectionSecretToRef:
+    name: input-test-conn

@@ -1,0 +1,46 @@
+---
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xinputs.haarchri.io
+spec:
+  group: haarchri.io
+  names:
+    kind: XInput
+    plural: xinputs
+  claimNames:
+    kind: Input
+    plural: inputs
+  versions:
+  - name: v1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            description: "The OpenAPIV3Schema of this Composite Resource Definition."
+            properties:
+              mcpName:
+                type: string
+                description: name of mcp controlplane
+              clusterId:
+                type: string
+                description: "uniq identifier for EKS Cluster"
+              eksVersion:
+                type: string
+                description: "EKS Cluster version"
+            required:
+              - clusterId
+              - eksVersion
+              - mcpName
+          status:
+            description: A Status represents the observed state
+            properties:
+              status:
+                description: Freeform field containing status information for status
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+            type: object

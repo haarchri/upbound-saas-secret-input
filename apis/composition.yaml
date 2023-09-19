@@ -1,0 +1,128 @@
+---
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xinput.haarchri.io
+spec:
+  writeConnectionSecretsToNamespace: upbound-system
+  compositeTypeRef:
+    apiVersion: haarchri.io/v1
+    kind: XInput
+  resources:
+    - name: ProviderConfig-local-mcp
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha1
+        kind: ProviderConfig
+        spec:
+          credentials:
+            source: Secret
+            secretRef:
+              namespace: default
+              key: kubeconfig
+      patches:
+        - fromFieldPath: spec.clusterId
+          toFieldPath: metadata.name
+        - fromFieldPath: spec.mcpName
+          toFieldPath: spec.credentials.secretRef.name
+          transforms:
+            - type: string
+              string:
+                fmt: "%s-kubeconfig"
+      readinessChecks:
+        - type: None
+
+    - name: secret-input
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha1
+        kind: Object
+        metadata:
+        spec:
+          managementPolicy: Observe
+          forProvider:
+            manifest:
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                namespace: default
+      patches:
+        - fromFieldPath: spec.clusterId
+          toFieldPath: metadata.annotations[crossplane.io/external-name]
+        - fromFieldPath: spec.clusterId
+          toFieldPath:  spec.forProvider.manifest.metadata.name
+        - fromFieldPath: spec.clusterId
+          toFieldPath: spec.providerConfigRef.name
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.manifest.data.vpcId
+          toFieldPath: status.status.vpcId
+          transforms:
+            - type: string
+              string:
+                type: Convert
+                convert: FromBase64
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.manifest.data.subnetA
+          toFieldPath: status.status.subnetA
+          transforms:
+            - type: string
+              string:
+                type: Convert
+                convert: FromBase64
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.manifest.data.subnetB
+          toFieldPath: status.status.subnetB
+          transforms:
+            - type: string
+              string:
+                type: Convert
+                convert: FromBase64
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.manifest.data.subnetC
+          toFieldPath: status.status.subnetC
+          transforms:
+            - type: string
+              string:
+                type: Convert
+                convert: FromBase64
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.manifest.data.adminRoleArn
+          toFieldPath: status.status.adminRoleArn
+          transforms:
+            - type: string
+              string:
+                type: Convert
+                convert: FromBase64
+
+    - name: NopResource
+      base:
+        apiVersion: nop.crossplane.io/v1alpha1
+        kind: NopResource
+        spec:
+          forProvider:
+            fields:
+              stringField: "use secret input"
+          writeConnectionSecretToRef:
+            namespace: default
+      patches:
+        - type: CombineFromComposite
+          toFieldPath: spec.forProvider.fields.combineField
+          combine:
+            strategy: string
+            variables:
+              - fromFieldPath: spec.clusterId
+              - fromFieldPath: spec.eksVersion
+              - fromFieldPath: status.status.vpcId
+              - fromFieldPath: status.status.subnetA
+              - fromFieldPath: status.status.subnetB
+              - fromFieldPath: status.status.subnetC
+              - fromFieldPath: status.status.adminRoleArn
+            string:
+              fmt: |
+                %s, %s, %s, %s, %s, %s, %s
+        - fromFieldPath: "metadata.uid"
+          toFieldPath: "spec.writeConnectionSecretToRef.name"
+          transforms:
+            - type: string
+              string:
+                fmt: "%s-nop"
+      readinessChecks:
+        - type: None
